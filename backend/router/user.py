@@ -15,6 +15,11 @@ class ChangePasswordRequest(BaseModel):
    password: str
    new_password: str
 
+class createTakeReguest(BaseModel):
+   title: str
+   description: str
+   priority: int
+
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.get('/')
@@ -44,4 +49,22 @@ async def change_user_password(user: user_dependency,
    db.commit()
 
 
-# @router.post('/create', status_code=status.HTTP_201_CREATED)
+@router.get('/tasks', status_code=status.HTTP_200_OK)
+async def get_user_task(user: user_dependency, db: db_dependency):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                          detail='login rirst')
+   task_model = db.query(Task).filter(Task.owner_id == user.get('id')).all()
+   return task_model
+
+
+@router.post('/create', status_code=status.HTTP_201_CREATED)
+async def create_task_by_user(user: user_dependency,
+                  db:db_dependency, requestBody: createTakeReguest):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                          detail='login first')
+   task_model = Task(**requestBody.model_dump(), owner_id = user.get('id'))
+
+   db.add(task_model)
+   db.commit()
