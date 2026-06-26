@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Path
 from starlette import status
 from models import Users, Task
 from pydantic import BaseModel
@@ -67,4 +67,39 @@ async def create_task_by_user(user: user_dependency,
    task_model = Task(**requestBody.model_dump(), owner_id = user.get('id'))
 
    db.add(task_model)
+   db.commit()
+
+
+@router.put('/update/{task_id}', status_code=status.HTTP_200_OK)
+async def update_own_task(user: user_dependency,
+                     db: db_dependency, requestBody: createTakeReguest, task_id: int = Path(gt=0)):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                          detail='Authentication invalid')
+   task_model = db.query(Task).filter(Task.id == task_id).first()
+
+   if task_model is None:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                          detail='Task not found')
+   
+   task_model.title = requestBody.title
+   task_model.description = requestBody.description
+   task_model.priority = requestBody.priority
+
+   db.add(task_model)
+   db.commit()
+
+
+@router.delete('/delete/{task_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task_by_id(user: user_dependency,
+                     db: db_dependency, task_id: int = Path(gt=0)):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                          detail="Unauthorized")
+   task_model = db.query(Task).filter(Task.id == task_id).first()
+
+   if task_model is None:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                          detail='Task not found')
+   db.delete(task_model)
    db.commit()

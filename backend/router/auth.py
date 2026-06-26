@@ -28,7 +28,6 @@ class createUserRequest(BaseModel):
    password: str = Field(max_length=256)
    role: str = Field(max_length=5)
    phone_number: int
-   is_active: bool = True
 
 
 class Token(BaseModel):
@@ -84,7 +83,6 @@ async def create_account(db: db_dependency, request_model: createUserRequest):
       role = request_model.role,
       phone_number = request_model.phone_number,
       hashed_password = bcrypt_context.hash(request_model.password),
-      is_active = True
    )
 
    db.add(create_user_model)
