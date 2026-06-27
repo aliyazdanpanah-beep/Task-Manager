@@ -65,17 +65,17 @@ async def get_user_task(user: user_dependency, db: db_dependency):
    return task_model
 
 
-@router.get('/filter/task', status_code=status.HTTP_200_OK)
+@router.get('/filter/task/{task_priority}', status_code=status.HTTP_200_OK)
 async def filter_own_task_by_priority(user: user_dependency, 
                               db: db_dependency, task_priority: int = Path(gt=0, lt=6)):
    if user is None:
       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                           detail="Authentication error")
-   task_model = db.query(Task).filter(Task.priority == task_priority).all()
+   task_model = db.query(Task).filter(Task.owner_id == user.get('id')).filter(Task.priority == task_priority).all()
 
    if task_model is None:
       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                        detail='Task with this priority dosnt exise')
+                        detail='Task with this priority does not exist')
    return task_model
 
 
