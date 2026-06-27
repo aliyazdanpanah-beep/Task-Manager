@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Path, Query, status
+from fastapi import FastAPI
 from router import auth, user, admin
 
 app = FastAPI()
