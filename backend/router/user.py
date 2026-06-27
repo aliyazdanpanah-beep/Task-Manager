@@ -143,3 +143,4 @@ async def delete_task_by_id(user: user_dependency,
                           detail='Task not found')
    db.delete(task_model)
    db.commit()
+   db.refresh(task_model)
