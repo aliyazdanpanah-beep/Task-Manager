@@ -1,3 +1,5 @@
+# adding filter task by priority
+
 from fastapi import APIRouter, HTTPException, Depends, Path
 from starlette import status
 from models import Users, Task
@@ -14,6 +16,11 @@ router = APIRouter(
 class ChangePasswordRequest(BaseModel):
    password: str
    new_password: str
+
+class ChangeUserInfoRequest(BaseModel):
+   username: str
+   email:str
+   phone_number: int
 
 class createTakeReguest(BaseModel):
    title: str
@@ -58,6 +65,20 @@ async def get_user_task(user: user_dependency, db: db_dependency):
    return task_model
 
 
+@router.get('/filter/task', status_code=status.HTTP_200_OK)
+async def filter_own_task_by_priority(user: user_dependency, 
+                              db: db_dependency, task_priority: int = Path(gt=0, lt=6)):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                          detail="Authentication error")
+   task_model = db.query(Task).filter(Task.priority == task_priority).all()
+
+   if task_model is None:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                        detail='Task with this priority dosnt exise')
+   return task_model
+
+
 @router.post('/create', status_code=status.HTTP_201_CREATED)
 async def create_task_by_user(user: user_dependency,
                   db:db_dependency, requestBody: createTakeReguest):
@@ -87,6 +108,25 @@ async def update_own_task(user: user_dependency,
    task_model.priority = requestBody.priority
 
    db.add(task_model)
+   db.commit()
+
+
+@router.put('/info/update', status_code=status.HTTP_200_OK)
+async def update_user_info(user: user_dependency, 
+                     db: db_dependency, requestBody: ChangeUserInfoRequest):
+   if user is None:
+      raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                          detail='please authentication')
+   user_model = db.query(Users).filter(Users.id == user.get('id')).first()
+
+   if user_model is None:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                          detail='user not found')
+   user_model.username = requestBody.username
+   user_model.email = requestBody.email
+   user_model.phone_number = requestBody.phone_number
+   
+   db.add(user_model)
    db.commit()
 
 
